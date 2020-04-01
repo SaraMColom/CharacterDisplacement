@@ -9,34 +9,13 @@ library(ggpubr)
 ### Set up
 ########################################################
 
-setwd("~/Google Drive File Stream/My Drive/Field_2018/")
 
 
 # Read in data
-Fit<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/FitPA4.csv")
-# Root trait data
-tot2<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/totPA4.csv")
-# Size
-size<-read.csv("FieldData/Leaf_Number_SizeProxy_Field2018_7232018.csv",na.strings=c("."," "))
-
-
-#determine which positions to drop
-Remove<-size[which(size$Comment !=""),"Position"]
-size2<-size[-which(size$Position%in%Remove),]
-
-count(size2,Combos)
-
-str(size2)
-size2$Block<-as.factor(size2$Block)
-size2$Leaf.Number<-as.numeric(as.character(size2$Leaf.Number))
-
-size2$Species=""
-size2[grep("Ip",size2$ML),]$Species<-"Ip"
-size2[grep("Ihed",size2$ML),]$Species<-"Ihed"
-
-HedLeaf<-droplevels(subset(size2,size2$Species=="Ihed"&size2$Population=="PA4"))
-Purp<-droplevels(subset(size2,size2$Species=="Ip"&size2$Population=="PA4"))
-
+Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")# Root trait data
+tot2<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/totPA4.csv")
+# Size/Fitness data
+size<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeFitData.csv",na.strings=c("."," "))
 
 
 ### TRANSFORM Root trait data, box-cox, center, scale
@@ -142,7 +121,7 @@ eigen$values
 res.pca1<-prcomp(BlkRmvFull[-Qually],center=F) # the prcomp funciton provideds eigenvectors as output
 
 Loads<-data.frame(res.pca1$rotation)
-write.csv(Loads,"LoadingScoresPCA.csv",row.names = F)
+# write.csv(Loads,"LoadingScoresPCA.csv",row.names = F)
 
 
 # Obtain the family and treatment means of individual PC scores
@@ -166,45 +145,13 @@ aggregate(PCA2~Species,TraitsAll,sd)
 aggregate(PCA3~Species,TraitsAll,sd)
 aggregate(PCA4~Species,TraitsAll,sd)
 
-########################################################
-# Calculate relative fitness
-########################################################
-
-# Reduce Purp to combine to leaf fitness data
-Purp.Red<-Purp[c("Position","Leaf.Number","Species")]
-colnames(Purp.Red)[3]<-"ID"
-
-Fit2<-merge(Purp.Red,Fit)
-
-SdMnSpeciesTrt<- aggregate(SeedNumber ~ Species+Trt, Fit2, mean) # Mean residual. NOTE I am using the version with block effects removed, only
-names(SdMnSpeciesTrt)[3]<- "MeanSdNm" #Rename coloumn for mean seed number
-# Merge average fitness of species and treatment
-Fitmean<-merge(Fit2,SdMnSpeciesTrt,by=c("Species","Trt"))
-# Calculate relative fitness as the observed seed number by the total mean seed number of that species and treatment.
-Fitmean$Rel_Fit<-Fitmean$SeedNumber/Fitmean$MeanSdNm
-
-Fitmean$Combos<-as.character(Fitmean$Combos)
-Fitmean[which(Fitmean$Trt=="Alone"),"Combos"]<-"none"
-Fitmean$Combos<-as.factor(Fitmean$Combos)
-
-# Extract residuals of lock and size
-Fitmean$SeedNumberResid<-NA
-SeedResiduals<-(lm(Rel_Fit~Block+Leaf.Number,Fitmean))$residuals
-Fitmean[names(SeedResiduals),"SeedNumberResid"]<-SeedResiduals
-
-
-# All looks good. Use SeedNumberResid
-plot(Fitmean$SeedNumber,Fitmean$Rel_Fit)
-plot(Fitmean$SeedNumberResid,Fitmean$Rel_Fit)
-
-
 
 ########################################################
 # Perform linear regression of PCs onto relative fitness
 ########################################################
 
 
-pcFamilyMeans<-read.csv("pcFitMeans.csv")
+pcFamilyMeans<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/pcFamilyMeans.csv")
 
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
 PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
@@ -285,7 +232,7 @@ SelectionCoef.Alone.BR<-EigenVectors %*% SelGradAlone
 # For alone treatment
 SelectionCoef.Comp.BR<-EigenVectors %*% SelGradCompetition
 
-# T statistic
+#   Estimate beta and Standard Error
 
 # 1. get the square value of eigenvectors
 EigenVecSq<-EigenVectors*EigenVectors
