@@ -18,7 +18,7 @@ Contains the simple R script format version of data analysis.
 *  Data used for analysis.
 
 - Leaf number data used as proxy for plant size ('SizeData.csv')
-- PC averaged by maternal line and species combination, and treatment ('pcFamilyMeans.csv')
+- PC and relative fitness data averaged by maternal line and treatment ('pcFamilyMeans.csv') (note both traits were standardized for block, and size for fitness)
 - Root data from DIRT ('totPA4.csv')
 - Fitness data combined with Size data ('SizeFitData.csv')
 - Fitness data ('FitPA4.csv')
