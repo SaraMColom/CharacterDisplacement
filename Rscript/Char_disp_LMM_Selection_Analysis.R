@@ -94,43 +94,47 @@ FocusTraits=c("trans.SKL_NODES", "trans.DIA_STM", "trans.DIA_STM_SIMPLE",
 
 # Read in data
 
-  # Fitness data
-  Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")
-  
-  # Root trait data
-  tot2<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/totPA4.csv")
+# Fitness data
+Fit<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/FitPA4.csv")
+
+# Root trait data
+tot2<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/totPA4.csv")
+
+# Size
+size<-read.csv("FieldData/Leaf_Number_SizeProxy_Field2018_7232018.csv",na.strings=c("."," "))
+
 
 # Sample sizes
-  kable(count(Fit,Trt,Species))
-  kable(count(tot2,Trt,Species))
+kable(count(Fit,Trt,Species))
+kable(count(tot2,Trt,Species))
 
-  
+
 # Create vector with list of variables to exclude from performing normalizing transformation
-  EXCLUDE<-c("Position", "Species","EXP_CODE", "Image_Name","IMAGE_ID", "CIR_RATIO", "X_PIXEL", "Full.Path","Name","Type","Date","URL","Last.Updated","Folder_Name","UniqId.x","File_copy","UniqId.y",
-             "Y_PIXEL", "X_SCALE", "Y_SCALE", "COMP_TIME", "Comment", "Block", 
-             "Order", "ML", "GerminationDate", "Comment1", "Dead_plant", "DeathCause", 
-             "RootsHarvested", "SeedsCounted", "Trt", "Comp", "Combos", "Population"
-  )
-  
-# Load libraries used to perform transformation on root traits
-  
-  library(rcompanion)
-  library(MASS)
-  
-# Transform all of the root traits of interest--i.e., variables excluded from list above  
-  predictors<-tot2[-which(names(tot2)%in%EXCLUDE)]
-  library(caret)
-  trans = preProcess(predictors, 
-                     c("BoxCox", "center", "scale")) # Box-Cox transformation, zero mean centered and 1 SD scaled
-  predictorsTrans = data.frame(
-    trans = predict(trans, predictors))
+EXCLUDE<-c("Position", "Species","EXP_CODE", "Image_Name","IMAGE_ID", "CIR_RATIO", "X_PIXEL", "Full.Path","Name","Type","Date","URL","Last.Updated","Folder_Name","UniqId.x","File_copy","UniqId.y",
+           "Y_PIXEL", "X_SCALE", "Y_SCALE", "COMP_TIME", "Comment", "Block", 
+           "Order", "ML", "GerminationDate", "Comment1", "Dead_plant", "DeathCause", 
+           "RootsHarvested", "SeedsCounted", "Trt", "Comp", "Combos", "Population"
+)
 
-  
-  
-  ##################################################  
+# Load libraries used to perform transformation on root traits
+
+library(rcompanion)
+library(MASS)
+
+# Transform all of the root traits of interest--i.e., variables excluded from list above  
+predictors<-tot2[-which(names(tot2)%in%EXCLUDE)]
+library(caret)
+trans = preProcess(predictors, 
+                   c("BoxCox", "center", "scale")) # Box-Cox transformation, zero mean centered and 1 SD scaled
+predictorsTrans = data.frame(
+  trans = predict(trans, predictors))
+
+
+
+##################################################  
 # Principal Componant Analysis on traits of interest
-  ##################################################   
-  
+##################################################   
+
 # Important to have non-NA values for 'alone' treatment 'Combos' variable in 
 #  competition so it is not removed when 'na.omit' is applied
 
@@ -535,8 +539,7 @@ ggarrange(pca,pcaQ, pcal,PC1,PC2,PC4,
 # (1) Open leaf number (plant size data) combined w Fitness data
 # (2) Perform linear mixed model ANOVA reported in main text
 
-Fit2=read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeFitData.csv")
-
+Fit2=read.csv("SizeFit.csv")
 Fit2$Block=as.factor(Fit2$Block) # fix str
 
 # Full model (Reported)
@@ -591,7 +594,7 @@ RelFitMean<-aggregate(SeedResiduals~ML+Combos+Trt,Fitmean,mean)
 AveragePhenoDist<-merge(RelFitMean,AveragePhenoDist)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-#                   Examine evidence for selection 
+#               Examine evidence for character displacement 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # PCA 1
@@ -599,15 +602,27 @@ summary(lm(SeedResiduals~PhenDist_PCA1,AveragePhenoDist))
 
 # PCA 2
 summary(lm(SeedResiduals~PhenDist_PCA2,AveragePhenoDist)) # Evidence of a *Negative* linear effect for PC2 (Root architecture)
-summary(lm(SeedResiduals~log(StdPD_PCA2),AveragePhenoDist)) # Evidence of a *Negative* linear effect for PC2 (Root architecture)
+summary(lm(SeedResiduals~log(PhenDist_PCA2),AveragePhenoDist)) # Evidence of a *Negative* linear effect for PC2 (Root architecture)
 
 # PCA 4
 summary(lm(SeedResiduals~PhenDist_PCA4,AveragePhenoDist))
 
 # Plot phenotypic distance regression
 
-# Root architecture
-RootArchPDplot=PlotRegressionPD(Data=AveragePhenoDist,alpha=0.5,mapping=aes(PhenDist_PCA2,SeedResiduals),xTitle="",colorpoint = "black",colorline="black",size=5)+
+
+# Create a generic plotting function
+PlotRegressionPD<-function(Data,mapping,Method=lm,Se=F,xTitle,colorpoint="red",colorline="gold",...){
+  ggplot()+
+    geom_point(data=Data,mapping,color=colorpoint,...)+
+    theme_classic()+
+    geom_smooth(data=Data,mapping,method=Method,se=Se,color= colorline,linetype="dashed")+
+    xlab(xTitle)+
+    ylab("Relative fitness")
+}
+
+
+
+PlotRegressionPD(Data=AveragePhenoDist,alpha=0.5,mapping=aes(PhenDist_PCA2,SeedResiduals),xTitle="",colorpoint = "black",colorline="black",size=5)+
   ylab("Relative fitness")+
   theme(axis.text.x = element_text(face="bold",  
                                    size=25),
@@ -617,7 +632,6 @@ RootArchPDplot=PlotRegressionPD(Data=AveragePhenoDist,alpha=0.5,mapping=aes(Phen
   theme(axis.title = element_text( size=30))+
   xlab( expression(paste("Root architecture PC2", " (",sqrt(PC[paste("I.purpurea")]^{2} - PC[paste("I.hederacea")]^{2}),")")))
 
-RootArchPDplot
 
 
 ########################################################
@@ -627,11 +641,11 @@ RootArchPDplot
 # Subset for I purpurea species
 IpPA4<-droplevels(TraitsAll%>%filter(Species=="Ip"))
 
-# Calculate mean of traits by treatment, maternal line and combos
+# Calculate mean of traits by treatment and maternal line
 
-pcFamilyMeans<-aggregate(list(IpPA4[c("PCA1","PCA2","PCA3","PCA4")]),by=list(IpPA4$Trt,IpPA4$ML,IpPA4$Combos),FUN=mean) #
+pcFamilyMeans<-aggregate(list(IpPA4[c("PCA1","PCA2","PCA3","PCA4")]),by=list(IpPA4$Trt,IpPA4$ML),FUN=mean) #
 
-colnames(pcFamilyMeans)[1:3]<-c("Trt","ML","Combos")
+colnames(pcFamilyMeans)[1:2]<-c("Trt","ML")
 
 for(i in c("PCA1","PCA2","PCA3","PCA4")){
   Quadratic=pcFamilyMeans[i]*pcFamilyMeans[i]
@@ -640,15 +654,15 @@ for(i in c("PCA1","PCA2","PCA3","PCA4")){
 
 dim(pcFamilyMeans)
 
-colnames(pcFamilyMeans)[8:11]<-paste(c("PCA1","PCA2","PCA3","PCA4"),"2",sep="_")
+colnames(pcFamilyMeans)[7:10]<-paste(c("PCA1","PCA2","PCA3","PCA4"),"2",sep="_")
 
-RelFitMean<-aggregate(SeedNumberResid~ML+Combos+Trt,Fitmean,mean)
+RelFitMean<-aggregate(SeedNumberResid~ML+Trt,Fitmean,mean)
 
 pcFamilyMeans<-merge(pcFamilyMeans,RelFitMean)
 PCAall=pcFamilyMeans
 
 # Write combined data to clean data folder
-#write.csv(pcFamilyMeans,"CharacterDisplacementRootTraits/CleanData/pcFamilyMeans.csv",row.names = F)
+# write.csv(pcFamilyMeans,"pcFamilyMeans.csv",row.names = F)
 
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
 PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
@@ -664,6 +678,9 @@ PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp))
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
 PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp))
+
+
+## ANCOVA for PCA4 (Root morphology)
 
 anova(lm(SeedNumberResid~PCA4,pcFamilyMeans))
 
@@ -681,7 +698,7 @@ PCAcomp$PCA4_2<-PCAcomp$PCA4*PCAcomp$PCA4
 PCAcomp$PCA2_2<-PCAcomp$PCA2*PCAcomp$PCA2
 
 
-summary(lm(SeedNumberResid~PCA1_2+PCA1,PCAcomp)) # Quadtatic selection for PC1
+summary(lm(SeedNumberResid~PCA1_2+PCA1,PCAcomp)) 
 summary(lm(SeedNumberResid~PCA2_2+PCA2,PCAcomp))
 summary(lm(SeedNumberResid~PCA3_2+PCA3,PCAcomp))
 summary(lm(SeedNumberResid~PCA4_2+PCA4,PCAcomp))
@@ -692,30 +709,85 @@ summary(lm(SeedNumberResid~PCA2_2+PCA2,PCAalone))
 summary(lm(SeedNumberResid~PCA3_2+PCA3,PCAalone))
 summary(lm(SeedNumberResid~PCA4_2+PCA4,PCAalone))
 
-# ANCOVA on quadratic selectin on root topology
-anova(lm(SeedNumberResid~PCA1+PCA1_2*Trt,PCAall)) # No treatment x trait effect
+# No evidence of quadratic selection
 
-# Plot selection on top soil root angle--Supplimentary Fig 2.
+# Plot selection on PC4 (root morphology)
 
-RootAngleMean=aggregate(trans.STA_MAX~ML+Combos+Species+Trt,BlkRmvFull,mean)
-AngleFitMean=merge(RootAngleMean,RelFitMean)
+TraitsAllFit<-merge(TraitsAll,RelFitMean)
 
-
-Regress<-ggplot(AngleFitMean)+
-  geom_point(aes(trans.STA_MAX, SeedNumberResid,color=Trt),size=5,alpha=0.5)+
+ggplot(pcFamilyMeans)+
+  geom_point(aes(PCA4, SeedNumberResid,color=Trt),size=5,alpha=0.5)+
   scale_color_manual(values=c("red","black"))+
-  stat_smooth(aes(trans.STA_MAX, SeedNumberResid,color=Trt,linetype=Trt),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T)+
+  stat_smooth(aes(PCA4, SeedNumberResid,color=Trt,linetype=Trt),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T)+
   scale_linetype_manual(values=c("twodash", "solid"))+
   theme_classic()+
   ylab("Relative fitness")+
-  xlab("Maximum soil root tissue angle")+
+  xlab("Root morphology (PC4)")+
   theme(axis.text.x = element_text(  
-    size=25),
+    size=20),
     axis.text.y = element_text( 
-      size=25),axis.title.y = element_text(size=30),
+      size=20),axis.title.y = element_text(size=20),
     axis.title.x = element_text( 
-      size=30))+
+      size=20))+
   theme(axis.text.x = element_text(vjust = 1, hjust=1))+
-  theme(axis.text.x = element_text(vjust = 1, hjust=1))+ theme(legend.text=element_text(size=20),legend.title=element_text(size=20))
+  theme(axis.text.x = element_text(vjust = 1, hjust=1))+ theme(legend.text=element_text(size=15),legend.title=element_text(size=15))
 
-Regress
+
+# Extra
+
+
+## Selection analysis on a few main traits
+
+#(1) Subset for traits of interest
+#(2) Obtain family mean of traits (average ea trait by ml, treatment and species)
+#(3) Average trait by class (e.g. average D% traits, architecture traits etc)
+
+#### Average root traits by maternal line, treatment and combination ####
+
+# The following for loop calculates the means of root traits by ML x Trt x Species for subset of traits
+
+D=grep("trans.D[0-9]{2}",names(BlkRmvFull))
+architecture=grep("STA_MAX|RDISTR_X",names(BlkRmvFull))
+morphology=grep("TD_AVG|HYP_DIA|TAP_DIA|MAX_DIA",names(BlkRmvFull))
+
+
+trait<-c(D,architecture,morphology)
+TraitNames=names(BlkRmvFull[trait])
+
+# Aggregate 
+for(i in trait) {
+  if(i==trait[1]){
+    df5<-aggregate(BlkRmv[,i] ~ML+Trt, BlkRmv, mean)
+    colnames(df5)[3]<-paste(colnames(BlkRmv)[i])
+  }
+  else{
+    df10<-aggregate(BlkRmv[,i] ~ML+Trt, BlkRmv, mean) 
+    colnames(df10)[3]<-paste(colnames(BlkRmv)[i])
+    df5<-merge(df10,df5,by=c("ML","Trt"))
+  }
+}
+
+
+head(df5)
+
+
+
+#  Combine maternal line means and fitness means
+RelFitMean2<-aggregate(SeedNumberResid~ML+Trt,RelFitMean,mean)
+df5Fitness<-merge(df5,RelFitMean2)
+
+
+Index<-which(names(df5Fitness)%in% c('ML','Trt','Combos'))
+Alone<-df5Fitness%>%filter(Trt=="Alone")
+Comp<-df5Fitness%>%filter(Trt!="Alone")
+
+# Selection gradient
+summary(lm(SeedNumberResid ~trans.STA_MAX+trans.RDISTR_X+trans.D90+trans.TD_AVG+trans.MAX_DIA_90, Alone))
+summary(lm(SeedNumberResid ~trans.STA_MAX+trans.RDISTR_X+trans.D90+trans.TD_AVG+trans.MAX_DIA_90, Comp))
+
+anova(lm(SeedNumberResid ~trans.STA_MAX+trans.RDISTR_X+trans.D90+trans.TD_AVG,df5Fitness))
+
+
+
+
+
