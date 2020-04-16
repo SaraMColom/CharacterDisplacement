@@ -722,7 +722,7 @@ TraitsAllFit<-merge(TraitsAll,RelFitMean)
 
 TraitsAllFit<-merge(TraitsAll,RelFitMean2)
 
-Regress<-ggplot(pcFamilyMeans2)+
+Regress<-ggplot(pcFamilyMeans)+
   geom_point(aes(PCA4, SeedNumberResid,color=Trt),size=5,alpha=0.5)+
   scale_color_manual(values=c("red","black"))+
   stat_smooth(aes(PCA4, SeedNumberResid,color=Trt),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T)+
