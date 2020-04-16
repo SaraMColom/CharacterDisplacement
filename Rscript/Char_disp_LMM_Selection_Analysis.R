@@ -542,7 +542,7 @@ ggarrange(pca,pcaQ, pcal,PC1,PC2,PC4,
 # (2) Perform linear mixed model ANOVA reported in main text
 
 Size=read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeData.csv")
-Fit2=merge(Size,Fit)
+Fit2=merge(size,Fit)
 Fit2$Block=as.factor(Fit2$Block) # fix str
 
 # Full model (Reported)
@@ -718,9 +718,16 @@ summary(lm(SeedNumberResid~PCA4_2+PCA4,PCAalone))
 
 # Plot selection on PC4 (root morphology)
 
+Ymin=min(pcFamilyMeans$SeedNumberResid)
+Ymax=max(pcFamilyMeans$SeedNumberResid)
+
+Xmin=min(pcFamilyMeans$PCA4)
+Xmax=max(pcFamilyMeans$PCA4)
+
+
 TraitsAllFit<-merge(TraitsAll,RelFitMean)
 
-TraitsAllFit<-merge(TraitsAll,RelFitMean2)
+pcFamilyMeans$Trt=ifelse(pcFamilyMeans$Trt=="Alone","Alone","Competition")
 
 Regress<-ggplot(pcFamilyMeans)+
   geom_point(aes(PCA4, SeedNumberResid,color=Trt),size=5,alpha=0.5)+
@@ -741,6 +748,61 @@ Regress<-ggplot(pcFamilyMeans)+
   labs(color = "Treatment")+
   theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
         legend.direction = "horizontal")
+
+
+
+# Plot ea separate
+Alone<-ggplot(pcFamilyMeans%>%filter(Trt=="Alone"))+
+  geom_point(aes(PCA4, SeedNumberResid),color="black",size=5,alpha=0.5)+
+  stat_smooth(aes(PCA4, SeedNumberResid),alpha=0.5,color="black",method="lm", formula=y~x,se=F,fullrange = T)+
+  #scale_linetype_manual(values=c("twodash", "solid"))+
+  theme_classic()+
+  ylab("")+
+  xlab("")+
+  theme(axis.text.x = element_text(  
+    size=25,face="bold"),
+    axis.text.y = element_text( 
+      size=25,face="bold"),axis.title.y = element_text(size=25),
+    axis.title.x = element_text( 
+      size=25))+
+  theme(axis.text.x = element_text(vjust = 1, hjust=1))+
+  #labs(color = "Treatment")+
+  theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
+        legend.direction = "horizontal")+
+  ylim(Ymin,Ymax)+
+  xlim(Xmin,Xmax)
+
+CompPlot<-ggplot(pcFamilyMeans%>%filter(Trt!="Alone"))+
+  geom_point(aes(PCA4, SeedNumberResid),color="black",size=5,alpha=0.5)+
+  stat_smooth(aes(PCA4, SeedNumberResid),alpha=0.5,color="black",method="lm", formula=y~x,se=F,fullrange = T)+
+  #scale_linetype_manual(values=c("twodash", "solid"))+
+  theme_classic()+
+  ylab("")+
+  xlab("")+
+  theme(axis.text.x = element_text(  
+    size=25,face="bold"),
+    axis.text.y = element_text( 
+      size=25,face="bold"),axis.title.y = element_text(size=25),
+    axis.title.x = element_text( 
+      size=25))+
+  theme(axis.text.x = element_text(vjust = 1, hjust=1))+
+  #labs(color = "Treatment")+
+  theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
+        legend.direction = "horizontal")+
+  ylim(Ymin,Ymax)
+
+# Common y title
+y.grob <- textGrob("Relative fitness", 
+                   gp=gpar(col="black", fontsize=35), rot=90)
+# Common x title
+x.grob <- textGrob("Root morphology (PC4)", 
+                   gp=gpar(col="black", fontsize=35), rot=0)
+
+plot<-plot_grid(Alone,CompPlot, align='vh', vjust=-1, scale = 1,labels = "AUTO",label_size = 30,label_x=c(0.25),label_y=c(0.90))
+
+grid.arrange(arrangeGrob(plot, left = y.grob,bottom=x.grob,padding = unit(0.5,units = 'in'),nrow=1))
+
+
 
 # Extra
 
