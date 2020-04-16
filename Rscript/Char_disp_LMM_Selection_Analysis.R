@@ -94,47 +94,47 @@ FocusTraits=c("trans.SKL_NODES", "trans.DIA_STM", "trans.DIA_STM_SIMPLE",
 
 # Read in data
 
-# Fitness data
-Fit<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/FitPA4.csv")
-
-# Root trait data
-tot2<-read.csv("https://raw.githubusercontent.com/SaraMColom/CharacterDisplacementRoots/master/CleanData/totPA4.csv")
-
-# Size
-size<-read.csv("FieldData/Leaf_Number_SizeProxy_Field2018_7232018.csv",na.strings=c("."," "))
-
-
+  # Fitness data
+  Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")
+  
+  # Root trait data
+  tot2<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/totPA4.csv")
+  
+  # Size
+  size<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeData.csv")
+  
+  
 # Sample sizes
-kable(count(Fit,Trt,Species))
-kable(count(tot2,Trt,Species))
+  table(Fit$Trt,Fit$Species)
+  table(tot2$Trt,tot2$Species)
 
-
+  
 # Create vector with list of variables to exclude from performing normalizing transformation
-EXCLUDE<-c("Position", "Species","EXP_CODE", "Image_Name","IMAGE_ID", "CIR_RATIO", "X_PIXEL", "Full.Path","Name","Type","Date","URL","Last.Updated","Folder_Name","UniqId.x","File_copy","UniqId.y",
-           "Y_PIXEL", "X_SCALE", "Y_SCALE", "COMP_TIME", "Comment", "Block", 
-           "Order", "ML", "GerminationDate", "Comment1", "Dead_plant", "DeathCause", 
-           "RootsHarvested", "SeedsCounted", "Trt", "Comp", "Combos", "Population"
-)
-
+  EXCLUDE<-c("Position", "Species","EXP_CODE", "Image_Name","IMAGE_ID", "CIR_RATIO", "X_PIXEL", "Full.Path","Name","Type","Date","URL","Last.Updated","Folder_Name","UniqId.x","File_copy","UniqId.y",
+             "Y_PIXEL", "X_SCALE", "Y_SCALE", "COMP_TIME", "Comment", "Block", 
+             "Order", "ML", "GerminationDate", "Comment1", "Dead_plant", "DeathCause", 
+             "RootsHarvested", "SeedsCounted", "Trt", "Comp", "Combos", "Population"
+  )
+  
 # Load libraries used to perform transformation on root traits
-
-library(rcompanion)
-library(MASS)
-
+  
+  library(rcompanion)
+  library(MASS)
+  
 # Transform all of the root traits of interest--i.e., variables excluded from list above  
-predictors<-tot2[-which(names(tot2)%in%EXCLUDE)]
-library(caret)
-trans = preProcess(predictors, 
-                   c("BoxCox", "center", "scale")) # Box-Cox transformation, zero mean centered and 1 SD scaled
-predictorsTrans = data.frame(
-  trans = predict(trans, predictors))
+  predictors<-tot2[-which(names(tot2)%in%EXCLUDE)]
+  library(caret)
+  trans = preProcess(predictors, 
+                     c("BoxCox", "center", "scale")) # Box-Cox transformation, zero mean centered and 1 SD scaled
+  predictorsTrans = data.frame(
+    trans = predict(trans, predictors))
 
-
-
-##################################################  
+  
+  
+  ##################################################  
 # Principal Componant Analysis on traits of interest
-##################################################   
-
+  ##################################################   
+  
 # Important to have non-NA values for 'alone' treatment 'Combos' variable in 
 #  competition so it is not removed when 'na.omit' is applied
 
@@ -205,6 +205,7 @@ ranova(PC4model)
 # Evaluating within species
 
 DirtP<-droplevels(Dirt%>%filter(Species=="Ip")) # Subset for I. purpurea
+DirtH<-droplevels(Dirt%>%filter(Species!="Ip")) # Subset for I. purpurea
 
 # PC 1
 PC1model<-lmer(PC1~Block+Trt+(1|ML),DirtP)
@@ -217,6 +218,7 @@ PC2model<-lmer(PC2~Block+Trt+(1|ML),DirtP)
 
 anova(PC2model)
 ranova(PC2model)
+
 
 #PC 3
 PC3model<-lmer(PC3~Block+Trt+(1|ML),DirtP)
@@ -314,14 +316,14 @@ lines(x = 1:nrow(eigenvalues), eigenvalues[, 2],
   
   fviz_screeplot(res.pca, ncp=10,barcolor="gold",barfill="gold",line="white")
 
-## Loading scores plotted as bar graph for ea PC 1-4, Fig. 3
+## Plot the % Contribution of each trait on each PC, Fig. 3
 
-Loads<-data.frame(res.pca$var$contrib)
-RowNames<-row.names(Loads)
-Loads$Trait<-gsub("trans.","",RowNames)
+Contrib<-data.frame(res.pca$var$contrib)
+RowNames<-row.names(Contrib)
+Contrib$Trait<-gsub("trans.","",RowNames)
 
 # Use position=position_dodge()
-q<-ggplot(data=Loads, aes(reorder(Trait, -Dim.1),Dim.1)) +
+q<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.1),Dim.1)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
   theme_classic()+
   xlab("")+
@@ -332,7 +334,7 @@ q<-q +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1,size=12),axis.text.y = element_text(size=15),plot.title = element_text(hjust = 0.5,size=20))+
   ggtitle("PC1 (Root topology)")
 
-r<-ggplot(data=Loads, aes(reorder(Trait, -Dim.2), y=Dim.2)) +
+r<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.2), y=Dim.2)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
   theme_classic()+
   xlab("")+
@@ -344,7 +346,7 @@ r<-r +Tx+
   ggtitle("PC2 (Root architecture)")
 
 
-s<-ggplot(data=Loads, aes(reorder(Trait, -Dim.3), y=Dim.3)) +
+s<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.3), y=Dim.3)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
   theme_classic()+
   xlab("")+
@@ -355,7 +357,7 @@ s<-s +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1,size=12),axis.text.y = element_text(size=15),plot.title = element_text(hjust = 0.5,size=20))+
   ggtitle("PC3 (Root size)")
 
-t<-ggplot(data=Loads, aes(reorder(Trait, -Dim.4), y=Dim.4)) +
+t<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.4), y=Dim.4)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
   theme_classic()+
   xlab("")+
@@ -539,7 +541,8 @@ ggarrange(pca,pcaQ, pcal,PC1,PC2,PC4,
 # (1) Open leaf number (plant size data) combined w Fitness data
 # (2) Perform linear mixed model ANOVA reported in main text
 
-Fit2=read.csv("SizeFit.csv")
+Size=read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeData.csv")
+Fit2=merge(Size,Fit)
 Fit2$Block=as.factor(Fit2$Block) # fix str
 
 # Full model (Reported)
@@ -565,7 +568,7 @@ Fitmean$Combos<-as.character(Fitmean$Combos)
 Fitmean[which(Fitmean$Trt=="Alone"),"Combos"]<-"none"
 Fitmean$Combos<-as.factor(Fitmean$Combos)
 
-# Extract residuals of lock and size
+# Extract residuals of Block and size
 Fitmean$SeedNumberResid<-NA
 SeedResiduals<-(lm(Rel_Fit~Block+Leaf.Number,Fitmean))$residuals
 Fitmean[names(SeedResiduals),"SeedNumberResid"]<-SeedResiduals
@@ -664,6 +667,8 @@ PCAall=pcFamilyMeans
 # Write combined data to clean data folder
 # write.csv(pcFamilyMeans,"pcFamilyMeans.csv",row.names = F)
 
+# Subset by treatment
+
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
 PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 
@@ -671,13 +676,13 @@ PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 PC1.res.alone<-summary(lm(SeedNumberResid~PCA1,PCAalone))
 PC2.res.alone<-summary(lm(SeedNumberResid~PCA2,PCAalone))
 PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone))
-PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone))
+PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone)) # Evidence for positive selection on PC4 (Marginally Significant)
 
 
 PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp)) 
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
 PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))
-PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp))
+PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp)) # Evidence for negative selection on PC4
 
 
 ## ANCOVA for PCA4 (Root morphology)
@@ -709,17 +714,19 @@ summary(lm(SeedNumberResid~PCA2_2+PCA2,PCAalone))
 summary(lm(SeedNumberResid~PCA3_2+PCA3,PCAalone))
 summary(lm(SeedNumberResid~PCA4_2+PCA4,PCAalone))
 
-# No evidence of quadratic selection
+ # No evidence of quadratic selection
 
 # Plot selection on PC4 (root morphology)
 
 TraitsAllFit<-merge(TraitsAll,RelFitMean)
 
-ggplot(pcFamilyMeans)+
+TraitsAllFit<-merge(TraitsAll,RelFitMean2)
+
+Regress<-ggplot(pcFamilyMeans2)+
   geom_point(aes(PCA4, SeedNumberResid,color=Trt),size=5,alpha=0.5)+
   scale_color_manual(values=c("red","black"))+
-  stat_smooth(aes(PCA4, SeedNumberResid,color=Trt,linetype=Trt),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T)+
-  scale_linetype_manual(values=c("twodash", "solid"))+
+  stat_smooth(aes(PCA4, SeedNumberResid,color=Trt),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T)+
+  #scale_linetype_manual(values=c("twodash", "solid"))+
   theme_classic()+
   ylab("Relative fitness")+
   xlab("Root morphology (PC4)")+
@@ -730,8 +737,10 @@ ggplot(pcFamilyMeans)+
     axis.title.x = element_text( 
       size=20))+
   theme(axis.text.x = element_text(vjust = 1, hjust=1))+
-  theme(axis.text.x = element_text(vjust = 1, hjust=1))+ theme(legend.text=element_text(size=15),legend.title=element_text(size=15))
-
+  theme(axis.text.x = element_text(vjust = 1, hjust=1))+
+  labs(color = "Treatment")+
+  theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
+        legend.direction = "horizontal")
 
 # Extra
 
@@ -788,6 +797,90 @@ summary(lm(SeedNumberResid ~trans.STA_MAX+trans.RDISTR_X+trans.D90+trans.TD_AVG+
 anova(lm(SeedNumberResid ~trans.STA_MAX+trans.RDISTR_X+trans.D90+trans.TD_AVG,df5Fitness))
 
 
+#####################################
+# Post-Hoc Linear mixed model on single traits
+#####################################
 
+# Soil root tissue angle
+STAmodel=lmer(trans.STA_MAX~Block+Trt+(1|ML),DirtP)
 
+anova(STAmodel)
+ranova(STAmodel)
 
+# Horizontal root distribution
+Xmodel=lmer(trans.RDISTR_X~Block+Trt+(1|ML),DirtP)
+
+anova(Xmodel)
+ranova(Xmodel)
+
+# Tip diameter
+TDmodel=lmer(trans.TD_AVG~Block+Trt+(1|ML),DirtP)
+anova(TDmodel)
+ranova(TDmodel)
+
+# Hyp diameter
+HYPmodel=lmer(trans.HYP_DIA~Block+Trt+(1|ML),DirtP)
+anova(HYPmodel)
+ranova(HYPmodel)
+
+# Maximum diameter
+Maxmodel=lmer(trans.MAX_DIA_90~Block+Trt+(1|ML),DirtP)
+anova(Maxmodel)
+ranova(Maxmodel)
+
+# Maximum diameter
+Maxmodel=lmer(trans.MAX_DIA_90~Block+Trt+(1|ML),DirtP)
+anova(Maxmodel)
+ranova(Maxmodel)
+
+# Run for loop to save results of LMM on the traits that were significant from PC back regression
+Vars<-c("trans.RDISTR_X","trans.MAX_DIA_90","trans.STA_MAX","trans.HYP_DIA","trans.TD_AVG","Trt","Block","ML")
+Else=which(names(DirtP)%in%Vars)
+D=grep("trans.D[0-9]{2}",names(DirtP))
+
+SubsetDirt=DirtP[c(Else,D)]
+dim(SubsetDirt)
+
+Response=as.list(names(SubsetDirt[4:17]))
+
+for(i in 1:14){
+  df=SubsetDirt
+  
+  if(i==1){
+    Trait=paste(Response[i])
+    ModelFixed=data.frame(anova(lmer(paste(Response[i],"~ Block+Trt+(1|ML)"), data=df)))
+    ModelRand=data.frame(ranova(lmer(paste(Response[i],"~ Block+Trt+(1|ML)"), data=df)))
+    
+    
+    ModelRand$Effect=row.names(ModelRand)
+    ModelFixed$Effect=row.names(ModelFixed)
+    ModelRand$Trait=paste(Trait)
+    ModelFixed$Trait=paste(Trait)
+    print("Fixed effects estimated")
+  }
+  else{
+    Trait=paste(Response[i])
+    ModelFixed1=data.frame(anova(lmer(paste(Response[i],"~ Block+Trt+(1|ML)"), data=df)))
+    ModelRand1=data.frame(ranova(lmer(paste(Response[i],"~ Block+Trt+(1|ML)"), data=df)))
+    
+    ModelRand1$Effect=row.names(ModelRand1)
+    ModelFixed1$Effect=row.names(ModelFixed1)
+    ModelRand1$Trait=paste(Trait)
+    ModelFixed1$Trait=paste(Trait)
+    ModelRand=rbind(ModelRand,ModelRand1)
+    ModelFixed=rbind(ModelFixed,ModelFixed1)
+    print("Random effects estimated")
+  }
+}
+
+# Remove the estimates for intercept in the random effects results
+ModelRand<-ModelRand[grep("ML",ModelRand$Effect),]
+ModelRand$Effect<-"Mat. Line"
+
+# Examine results
+DT::datatable(ModelFixed)
+DT::datatable(ModelRand)
+
+# Round to the first three digits
+#ModelFixed[1:6]=round(ModelFixed[1:6],3)
+#ModelRand[1:6]=round(ModelRand[1:6],3)

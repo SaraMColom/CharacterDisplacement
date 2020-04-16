@@ -10,12 +10,21 @@ library(ggpubr)
 ########################################################
 
 
-
 # Read in data
-Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")# Root trait data
+Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")
+# Root trait data
 tot2<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/totPA4.csv")
-# Size/Fitness data
-size<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeFitData.csv",na.strings=c("."," "))
+# Size
+size<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeData.csv",na.strings = c("."," "))
+
+
+# Correct data structure
+size$Block=as.factor(size$Block)
+Fit$Block=as.factor(Fit$Block)
+tot2$Block=as.factor(tot2$Block)
+
+# Subset for I. purpurea
+Purp<-droplevels(subset(size2,size2$Species=="Ip"&size2$Population=="PA4"))
 
 
 ### TRANSFORM Root trait data, box-cox, center, scale
@@ -26,7 +35,7 @@ EXCLUDE<-c("Position", "Species","EXP_CODE", "Image_Name","IMAGE_ID", "CIR_RATIO
            "Y_PIXEL", "X_SCALE", "Y_SCALE", "COMP_TIME", "Comment", "Block",
            "Order", "ML", "GerminationDate", "Comment1", "Dead_plant", "DeathCause",
            "RootsHarvested", "SeedsCounted", "Trt", "Comp", "Combos", "Population"
-)
+) 
 
 ########################################################
 # Transform data
@@ -102,29 +111,29 @@ pca<-p + scale_color_manual(values=c('#999999','#E69F00'))+
 
 pca
 
-# Select the top 30 contributing individuals
+# Plot the top 30 contributing individuals
 fviz_pca_biplot(res.pca, label="var",col.var="contrib",repel=T,
                 select.var = list(contrib = 10))+
   scale_color_gradient2(low="green", mid="red",
                         high="red", midpoint=96) +
   theme_minimal()
 
+# Plot the ten top traits contributing to ea PC for the top 4 PC's
+# Contributions of variables to PC1
+fviz_contrib(res.pca, choice = "var", axes = 1, top = 10) # PC1
+# Contributions of variables to PC2
+fviz_contrib(res.pca, choice = "var", axes = 2, top = 10) # PC2
+fviz_contrib(res.pca, choice = "var", axes = 3, top = 10) # PC3
+# Contributions of variables to PC2
+fviz_contrib(res.pca, choice = "var", axes = 4, top = 10) # PC4
 
-# Alternative eigen value and vector
-Res.cor<-cor(BlkRmvFull[-Qually])
-traitsNames<-row.names(Res.cor)
-eigen<-eigen(Res.cor)
-eigen$values
 
-
-# EigenVectors
+# Estimate the EigenVectors of each trait
 res.pca1<-prcomp(BlkRmvFull[-Qually],center=F) # the prcomp funciton provideds eigenvectors as output
 
-Loads<-data.frame(res.pca1$rotation)
-# write.csv(Loads,"LoadingScoresPCA.csv",row.names = F)
+Loads<-data.frame(res.pca1$rotation) # Extract the loading score of each trait
 
-
-# Obtain the family and treatment means of individual PC scores
+# Making a copy of the traits data with block effects removed
 
 TraitsAll<-BlkRmvFull
 
@@ -135,37 +144,75 @@ TraitsAll$PCA2<-res.pca$ind$coord[,2]
 TraitsAll$PCA3<-res.pca$ind$coord[,3]
 TraitsAll$PCA4<-res.pca$ind$coord[,4]
 
-aggregate(PCA1~Species,TraitsAll,mean)
-aggregate(PCA2~Species,TraitsAll,mean)
-aggregate(PCA3~Species,TraitsAll,mean)
-aggregate(PCA4~Species,TraitsAll,mean)
+########################################################
+# Calculate relative fitness
+########################################################
 
-aggregate(PCA1~Species,TraitsAll,sd)
-aggregate(PCA2~Species,TraitsAll,sd)
-aggregate(PCA3~Species,TraitsAll,sd)
-aggregate(PCA4~Species,TraitsAll,sd)
+# Reduce Purp to combine to leaf fitness data
+Purp.Red<-Purp[c("Position","Leaf.Number","Species")]
+colnames(Purp.Red)[3]<-"ID"
+
+Fit2<-merge(Purp.Red,Fit)
+
+SdMnSpeciesTrt<- aggregate(SeedNumber ~ Species+Trt, Fit2, mean) # Mean residual
+names(SdMnSpeciesTrt)[3]<- "MeanSdNm" #Rename coloumn for mean seed number
+
+# Merge average fitness by species and treatment 
+Fitmean<-merge(Fit2,SdMnSpeciesTrt,by=c("Species","Trt"))
+
+# Calculate relative fitness as the observed seed number by the total mean seed number of that species and treatment.
+Fitmean$Rel_Fit<-Fitmean$SeedNumber/Fitmean$MeanSdNm
+
+Fitmean$Combos<-as.character(Fitmean$Combos)
+Fitmean[which(Fitmean$Trt=="Alone"),"Combos"]<-"none"
+Fitmean$Combos<-as.factor(Fitmean$Combos)
+
+# Extract residuals of block and size
+Fitmean$SeedNumberResid<-NA
+SeedResiduals<-(lm(Rel_Fit~Block+Leaf.Number,Fitmean))$residuals
+Fitmean[names(SeedResiduals),"SeedNumberResid"]<-SeedResiduals
+
+
+# All looks good. Use SeedNumberResid
+plot(Fitmean$SeedNumber,Fitmean$Rel_Fit)
+plot(Fitmean$SeedNumberResid,Fitmean$Rel_Fit)
+
+RelFitMean<-aggregate(SeedNumberResid~ML+Trt,Fitmean,mean) # Average relative fitness by treatment and maternal line
 
 
 ########################################################
 # Perform linear regression of PCs onto relative fitness
 ########################################################
 
+# Obtain the family and treatment means of individual PC scores
 
-pcFamilyMeans<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/pcFamilyMeans.csv")
+# Subset for I purpurea species
+IpPA4<-droplevels(TraitsAll%>%filter(Species=="Ip"))
 
+# Calculate mean of traits by treatment and maternal line
+
+pcFamilyMeans<-aggregate(list(IpPA4[c("PCA1","PCA2","PCA3","PCA4")]),by=list(IpPA4$Trt,IpPA4$ML),FUN=mean) #
+
+colnames(pcFamilyMeans)[1:2]<-c("Trt","ML") # Rename columns
+
+
+# Combine relative fitness and family means of the PC's
+
+pcFamilyMeans<-merge(pcFamilyMeans,RelFitMean)
+PCAall=pcFamilyMeans
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
 PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 
-
+# Estimate the selection gradient for each treatment and PC trait
 PC1.res.alone<-summary(lm(SeedNumberResid~PCA1,PCAalone))
 PC2.res.alone<-summary(lm(SeedNumberResid~PCA2,PCAalone))
-PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone))
+PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone)) # NOTE: we do not include root size (PC3) in our selection analysis
 PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone))
 
 
-PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp))
+PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp)) 
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
-PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))
+PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))  # NOTE: we do not include rootsize (PC3) in our selection analysis
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp))
 
 
@@ -177,8 +224,8 @@ CompResults<-list(PC1.res.comp,PC2.res.comp,PC3.res.comp,PC4.res.comp)
 Empty=list()
 for (i in AloneResults){
   for (j in c(1,2,4)){
-    coefficient<-(AloneResults[[j]])$coefficients[2,1]
-    Empty[j]<-coefficient
+coefficient<-(AloneResults[[j]])$coefficients[2,1]
+Empty[j]<-coefficient
   }
 }
 
@@ -232,7 +279,7 @@ SelectionCoef.Alone.BR<-EigenVectors %*% SelGradAlone
 # For alone treatment
 SelectionCoef.Comp.BR<-EigenVectors %*% SelGradCompetition
 
-#   Estimate beta and Standard Error
+# Confidence Intervals
 
 # 1. get the square value of eigenvectors
 EigenVecSq<-EigenVectors*EigenVectors
@@ -249,11 +296,12 @@ CompSE.BR<-sqrt((EigenVecSq%*%StErrSqComp))
 # Alone
 AloneBR.Res<-data.frame(cbind(SelectionCoef.Alone.BR,AloneSE.BR))
 colnames(AloneBR.Res)<-c("Beta","SE")
+AloneBR.Res$tValue=AloneBR.Res$Beta/AloneBR.Res$SE
 
 #Competition
 CompBR.Res<-data.frame(cbind(SelectionCoef.Comp.BR,CompSE.BR))
 colnames(CompBR.Res)<-c("Beta","SE")
-
+CompBR.Res$tValue=CompBR.Res$Beta/CompBR.Res$SE
 
 
 AloneBR.Res$Trt="Alone"
@@ -264,6 +312,7 @@ CompBR.Res$Traits<-row.names(CompBR.Res)
 
 Total.BR.Res<-rbind(AloneBR.Res,CompBR.Res)
 
+#write.csv(Total.BR.Res,"ResultsBackRegression.csv",row.names = F)
 
 ### Estimate significance with confidence intervals of 2 SE
 
@@ -274,5 +323,20 @@ Total.BR.Res$Low=Total.BR.Res$Beta-Total.BR.Res$SE2
 
 DT::datatable(Total.BR.Res)
 DT::datatable(Total.BR.Res[-which(Total.BR.Res$Upp>0 & Total.BR.Res$Low<0),])
+
+
+#       EXAMPLE TEST:
+#   Run Code below and compare to Chong et al. 2018
+####################
+# Test with Anholt paper and results from Chong et al 2018
+#TestLoad<-read.csv("~/Downloads/Loading_Anholt_1991.csv")
+#TestCoef<-read.csv("~/Downloads/RegressionPC_Anholt_1991.csv")
+#head(TestLoad)
+#head(TestCoef)
+
+#Betas<-as.matrix(TestLoad) %*% as.matrix(TestCoef[2])
+#TestLoadSq<-as.matrix(TestLoad)*as.matrix(TestLoad)
+#SEsquared<-TestCoef$se*TestCoef$se
+#sqrt((TestLoadSq%*%SEsquared)) # Standard Error for projected betas
 
 
