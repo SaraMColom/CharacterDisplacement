@@ -8,14 +8,15 @@ library(ggpubr)
 ########################################################
 ### Set up
 ########################################################
+setwd("C:/Users/Sara Colom/Desktop/CharacterDisplacement-master")
 
 
 # Read in data
-Fit<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/FitPA4.csv")
+Fit<-read.csv("CleanData/FitPA4.csv")
 # Root trait data
-tot2<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/totPA4.csv")
+tot2<-read.csv("CleanData/totPA4.csv")
 # Size
-size<-read.csv("~/Desktop/CharacterDisplacementRootTraits/CleanData/SizeData.csv",na.strings = c("."," "))
+size<-read.csv("CleanData/SizeData.csv",na.strings = c("."," "))
 
 
 # Correct data structure
@@ -129,9 +130,61 @@ fviz_contrib(res.pca, choice = "var", axes = 4, top = 10) # PC4
 
 
 # Estimate the EigenVectors of each trait
-res.pca1<-prcomp(BlkRmvFull[-Qually],center=F) # the prcomp funciton provideds eigenvectors as output
+library(Rcmdr)
 
-Loads<-data.frame(res.pca1$rotation) # Extract the loading score of each trait
+# Extract the loading score of each trait
+
+
+Loads<-sweep(res.pca$var$coord,2,sqrt(res.pca$eig[1:ncol(res.pca$var$coord),1]),FUN="/") 
+
+LoadsDf<-data.frame(Loads)
+LoadsDf$Traits<-gsub("trans.","",x=row.names(Loads))
+
+PC1Loads<-ggplot(LoadsDf)+
+  geom_bar(aes(Traits,Dim.1),stat="identity")+
+  theme_classic()+
+  theme(axis.text.x=element_text(angle=90,color="black",size=15),plot.title = element_text(hjust=0.5,size=20))+
+  ylab(" ")+
+  xlab(" ")+
+  ggtitle("PC1")
+
+PC2Loads<-ggplot(LoadsDf)+
+  geom_bar(aes(Traits,Dim.2),stat="identity")+
+  theme_classic()+
+  theme(axis.text.x=element_text(angle=90,color="black",size=15),plot.title = element_text(hjust=0.5,size=20))+
+  ylab(" ")+
+  xlab(" ")+
+  ggtitle("PC2")
+
+
+PC3Loads<-ggplot(LoadsDf)+
+  geom_bar(aes(Traits,Dim.3),stat="identity")+
+  theme_classic()+
+  theme(axis.text.x=element_text(angle=90,color="black",size=15),plot.title = element_text(hjust=0.5,size=20))+
+  ylab(" ")+
+  xlab(" ")+
+  ggtitle("PC3")
+
+PC4Loads<-ggplot(LoadsDf)+
+  geom_bar(aes(Traits,Dim.4),stat="identity")+
+    theme_classic()+
+  theme(axis.text.x=element_text(angle=90,color="black",size=15),plot.title = element_text(hjust=0.5,size=20))+
+  ylab(" ")+
+  xlab(" ")+
+  ggtitle("PC4")
+
+library(grid)
+
+
+Grid=cowplot::plot_grid(PC1Loads,PC2Loads,PC3Loads,PC4Loads,nrow=2,ncol=2,align="hv")
+
+x.grob<-textGrob("Traits",gp=gpar(col=
+                                  "black",fontsize=25),rot=0)
+
+y.grob<-textGrob("Loading Score",gp=gpar(col="black",fontsize=25),rot=90)
+
+
+gridExtra::grid.arrange(gridExtra::arrangeGrob(Grid,bottom=x.grob,left=y.grob,padding=unit(1, units='in'),nrow=1))
 
 # Making a copy of the traits data with block effects removed
 
@@ -200,19 +253,24 @@ colnames(pcFamilyMeans)[1:2]<-c("Trt","ML") # Rename columns
 
 pcFamilyMeans<-merge(pcFamilyMeans,RelFitMean)
 PCAall=pcFamilyMeans
+
+pcFamilyMeans=pcFamilyMeans
+
+
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
 PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 
 # Estimate the selection gradient for each treatment and PC trait
 PC1.res.alone<-summary(lm(SeedNumberResid~PCA1,PCAalone))
 PC2.res.alone<-summary(lm(SeedNumberResid~PCA2,PCAalone))
-PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone)) # NOTE: we do not include root size (PC3) in our selection analysis
+PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone)) 
 PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone))
 
 
 PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp)) 
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
-PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))  # NOTE: we do not include rootsize (PC3) in our selection analysis
+PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))  
+#PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp%>%filter(PCA4>-1)))
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp))
 
 
@@ -220,6 +278,8 @@ PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp))
 
 AloneResults<-list(PC1.res.alone,PC2.res.alone,PC3.res.alone,PC4.res.alone)
 CompResults<-list(PC1.res.comp,PC2.res.comp,PC3.res.comp,PC4.res.comp)
+
+
 
 Empty=list()
 for (i in AloneResults){
@@ -271,7 +331,7 @@ StErCompetition<-do.call('rbind',Empty)
 ########################################################
 
 # Eigenvectors multiplied by the vector of selection gradient
-EigenVectors<-as.matrix(Loads[c(1,2,4)])
+EigenVectors<-Loads[,c(1,2,4)]
 
 # For alone treatment
 SelectionCoef.Alone.BR<-EigenVectors %*% SelGradAlone
@@ -323,7 +383,12 @@ Total.BR.Res$Low=Total.BR.Res$Beta-Total.BR.Res$SE2
 
 DT::datatable(Total.BR.Res)
 DT::datatable(Total.BR.Res[-which(Total.BR.Res$Upp>0 & Total.BR.Res$Low<0),])
+Significant<-Total.BR.Res[-which(Total.BR.Res$Upp>0 & Total.BR.Res$Low<0),]
 
+Save<-Total.BR.Res[which(Total.BR.Res$Traits%in%Significant$Traits),]
+Save$Traits=row.names(Save)
+Save$Traits<-gsub("1","",Save$Traits)
+DT::datatable(Save[c(1,2,4,7,8)])
 
 #       EXAMPLE TEST:
 #   Run Code below and compare to Chong et al. 2018
@@ -340,3 +405,72 @@ DT::datatable(Total.BR.Res[-which(Total.BR.Res$Upp>0 & Total.BR.Res$Low<0),])
 #sqrt((TestLoadSq%*%SEsquared)) # Standard Error for projected betas
 
 
+# Create elements for the figure pannel.
+
+# Common y title
+
+# Common x title
+x.grob <- textGrob("Traits", 
+                   gp=gpar(col="black", fontsize=25), rot=0)
+
+plot<-plot_grid(q,r,s,t, align='vh', vjust=1, scale = 1,labels = "AUTO",label_size = 18,label_x=c(0.25),label_y=c(0.97),nrow=1)
+
+grid.arrange(arrangeGrob(plot,bottom=x.grob))
+
+
+## Write function to plot traits under selection
+
+
+# Save theme choices
+
+Tx<-theme(axis.text.x = element_text(face="bold",  
+                                     size=20),
+          axis.text.y = element_text(face="bold", 
+                                     size=20))+
+  theme(axis.text.x = element_text(vjust = -0.5, hjust=0.5))
+
+traits<-dput(unique(Save$Traits))
+
+
+# Aggregate to save family mean values 
+TraitFamilyMeans<-aggregate(list(IpPA4[traits]),by=list(IpPA4$Trt,IpPA4$ML),FUN=mean) #
+
+colnames(TraitFamilyMeans)[1:2]<-c("Trt","ML")
+
+#  Combine maternal line means and fitness means
+RelFitMean2<-aggregate(SeedNumberResid~ML+Trt,RelFitMean,mean)
+df5Fitness<-merge(TraitFamilyMeans,RelFitMean2)
+
+Total.BR.Res$Trt<-as.factor(Total.BR.Res$Trt)
+
+traits=c("trans.STA_RANGE","trans.RTA_RANGE","trans.BASAL_COUNT")
+
+
+SelectionGraph<-function(x){
+  
+  Alonedata<-(df5Fitness%>%filter(Trt=="Alone"))
+  Alone<-Total.BR.Res%>%filter(Trt=="Alone",Traits==x)
+  AloneBeta<-Alone$Beta
+  
+  Compdata<-(df5Fitness%>%filter(Trt=="Inter"))
+  Comp<-Total.BR.Res%>%filter(Trt!="Alone",Traits==x)
+  CompBeta<-Comp$Beta
+  
+  Graph<- ggplot()+
+    #geom_point(data=Alonedata,aes(Alonedata[,x],SeedNumberResid),color="#00B050",size=5,alpha=0.5)+
+    geom_abline(slope = AloneBeta,intercept = 0,linetype="dashed",color="#00B050",size=2)+
+    
+    #geom_point(data=Compdata,aes(Compdata[,x],SeedNumberResid),color="black",size=5,alpha=0.5)+
+    geom_abline(slope = CompBeta,intercept = 0,linetype="solid",color="black",size=2)+
+    theme_classic()+
+    ylab("")+
+    xlab("")+
+    Tx
+  
+  return(Graph)
+}
+
+
+Plots<- lapply(traits,FUN=SelectionGraph)
+
+do.call("ggarrange",Plots)
