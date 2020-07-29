@@ -1,3 +1,5 @@
+# Load libraries
+
 library(factoextra)
 library(FactoMineR)
 library(tidyr)
@@ -8,7 +10,7 @@ library(ggpubr)
 ########################################################
 ### Set up
 ########################################################
-setwd("C:/Users/Sara Colom/Desktop/CharacterDisplacement-master")
+setwd("C:/Users/Sara Colom/Desktop/character-displacement/CharacterDisplacement")
 
 
 # Read in data
@@ -25,7 +27,7 @@ Fit$Block=as.factor(Fit$Block)
 tot2$Block=as.factor(tot2$Block)
 
 # Subset for I. purpurea
-Purp<-droplevels(subset(size2,size2$Species=="Ip"&size2$Population=="PA4"))
+Purp<-droplevels(subset(size,size$Species=="Ip"&size$Population=="PA4"))
 
 
 ### TRANSFORM Root trait data, box-cox, center, scale
@@ -403,74 +405,3 @@ DT::datatable(Save[c(1,2,4,7,8)])
 #TestLoadSq<-as.matrix(TestLoad)*as.matrix(TestLoad)
 #SEsquared<-TestCoef$se*TestCoef$se
 #sqrt((TestLoadSq%*%SEsquared)) # Standard Error for projected betas
-
-
-# Create elements for the figure pannel.
-
-# Common y title
-
-# Common x title
-x.grob <- textGrob("Traits", 
-                   gp=gpar(col="black", fontsize=25), rot=0)
-
-plot<-plot_grid(q,r,s,t, align='vh', vjust=1, scale = 1,labels = "AUTO",label_size = 18,label_x=c(0.25),label_y=c(0.97),nrow=1)
-
-grid.arrange(arrangeGrob(plot,bottom=x.grob))
-
-
-## Write function to plot traits under selection
-
-
-# Save theme choices
-
-Tx<-theme(axis.text.x = element_text(face="bold",  
-                                     size=20),
-          axis.text.y = element_text(face="bold", 
-                                     size=20))+
-  theme(axis.text.x = element_text(vjust = -0.5, hjust=0.5))
-
-traits<-dput(unique(Save$Traits))
-
-
-# Aggregate to save family mean values 
-TraitFamilyMeans<-aggregate(list(IpPA4[traits]),by=list(IpPA4$Trt,IpPA4$ML),FUN=mean) #
-
-colnames(TraitFamilyMeans)[1:2]<-c("Trt","ML")
-
-#  Combine maternal line means and fitness means
-RelFitMean2<-aggregate(SeedNumberResid~ML+Trt,RelFitMean,mean)
-df5Fitness<-merge(TraitFamilyMeans,RelFitMean2)
-
-Total.BR.Res$Trt<-as.factor(Total.BR.Res$Trt)
-
-traits=c("trans.STA_RANGE","trans.RTA_RANGE","trans.BASAL_COUNT")
-
-
-SelectionGraph<-function(x){
-  
-  Alonedata<-(df5Fitness%>%filter(Trt=="Alone"))
-  Alone<-Total.BR.Res%>%filter(Trt=="Alone",Traits==x)
-  AloneBeta<-Alone$Beta
-  
-  Compdata<-(df5Fitness%>%filter(Trt=="Inter"))
-  Comp<-Total.BR.Res%>%filter(Trt!="Alone",Traits==x)
-  CompBeta<-Comp$Beta
-  
-  Graph<- ggplot()+
-    #geom_point(data=Alonedata,aes(Alonedata[,x],SeedNumberResid),color="#00B050",size=5,alpha=0.5)+
-    geom_abline(slope = AloneBeta,intercept = 0,linetype="dashed",color="#00B050",size=2)+
-    
-    #geom_point(data=Compdata,aes(Compdata[,x],SeedNumberResid),color="black",size=5,alpha=0.5)+
-    geom_abline(slope = CompBeta,intercept = 0,linetype="solid",color="black",size=2)+
-    theme_classic()+
-    ylab("")+
-    xlab("")+
-    Tx
-  
-  return(Graph)
-}
-
-
-Plots<- lapply(traits,FUN=SelectionGraph)
-
-do.call("ggarrange",Plots)

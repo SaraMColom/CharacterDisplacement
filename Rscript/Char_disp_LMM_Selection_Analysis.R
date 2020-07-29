@@ -67,19 +67,6 @@ Tx2<-theme(axis.text.y = element_text(face="bold",
         plot.title=element_text(size=25,hjust=0))
 
 
-TxWhite<-theme(axis.text.x = element_text(face="bold",size=20,color="white"),
-               axis.text.y = element_text(face="bold", 
-                                          size=20,color="white"))+
-  theme(axis.text.x = element_text(vjust = 1, hjust=1))
-
-# Black themed background
-BlackTheme<-theme(
-  # get rid of panel grids
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  # Change plot and panel background
-  plot.background=element_rect(fill = "black"),
-  panel.background = element_rect(fill = 'black'))
 
 FocusTraits=c("trans.SKL_NODES", "trans.DIA_STM", "trans.DIA_STM_SIMPLE", 
               "trans.AREA", "trans.AVG_DENSITY", "trans.TD_AVG", "trans.WIDTH_MAX", 
@@ -93,7 +80,7 @@ FocusTraits=c("trans.SKL_NODES", "trans.DIA_STM", "trans.DIA_STM_SIMPLE",
 
 
 # Read in data
-setwd("C:/Users/Sara Colom/Desktop/CharacterDisplacement-master")
+setwd("C:/Users/Sara Colom/Desktop/character-displacement/CharacterDisplacement")
 
   # Fitness data
   Fit<-read.csv("CleanData/FitPA4.csv")
@@ -185,32 +172,7 @@ Dirt$Block<-as.factor(Dirt$Block)
 #         Linear Mixed Model ANOVAS
 ##################################################   
 
-# Final model--reported in Table 2.
-# Evaluating *between* species within competition treatment
 
-# PC 1
-PC1model<-lmer(PC1~Species+Block+(1|ML),Dirt%>%filter(Trt=="Inter"))
-
-anova(PC1model) #Significant species differences
-ranova(PC1model)
-
-
-# PC 2
-PC2model<-lmer(PC2~Species+Block+(1|ML),Dirt%>%filter(Trt=="Inter"))
-anova(PC2model) # NS species differences
-ranova(PC2model) # Maternal line is significant
-
-#PC 3
-PC3model<-lmer(PC3~Species+Block+(1|ML),Dirt%>%filter(Trt=="Inter"))
-
-anova(PC3model) # Significant species differences in root size
-ranova(PC3model)
-
-#PC 4
-PC4model<-lmer(PC4~Species+Block+(1|ML),Dirt%>%filter(Trt=="Inter"))
-
-anova(PC4model) # Significant species differences in root morphology
-ranova(PC4model) 
 
 # Final model--referenced in main text
 # Evaluating within species
@@ -219,7 +181,7 @@ DirtP<-droplevels(Dirt%>%filter(Species=="Ip")) # Subset for I. purpurea
 DirtH<-droplevels(Dirt%>%filter(Species!="Ip")) # Subset for I. purpurea
 
 # PC 1
-PC1model<-lmer(PC1~Block+Trt+Comp+(1|ML),DirtP)
+PC1model<-lmer(PC1~Block+Trt+(1|ML),DirtP)
 
 anova(PC1model) # Treatment effect and NO block effect
 ranova(PC1model) # No maternal line effect
@@ -229,19 +191,6 @@ PC2model<-lmer(PC2~Block+Trt+(1|ML),DirtP)
 
 anova(PC2model) # Marginal treatment effect
 ranova(PC2model)
-
-# PC 2
-PC2model<-lmer(PC2~Trt+Block+(1|ML),DirtP)
-
-anova(PC2model)
-ranova(PC2model)
-
-### Within Ihed
-PC2modelH<-lmer(PC2~Block+(1|ML),DirtH)
-
-anova(PC2modelH)
-ranova(PC2modelH)
-
 
 #PC 3
 PC3model<-lmer(PC3~Block+Trt+(1|ML),DirtP)
@@ -254,45 +203,6 @@ PC4model<-lmer(PC4~Block+Trt+(1|ML),DirtP)
 
 anova(PC4model)
 ranova(PC4model) # Significant maternal line effect for PC 4
-
-
-## Additional linear mixed model within species to examine effect of specific ML competitor
-DirtP$Comp=ifelse(DirtP$Combos!="none",sub('.*\\-',"",DirtP$Combos),"none")
-
-# PC 1
-PC1model2<-lmer(PC1~Block*Comp+Trt+(1|ML),DirtP)
-
-anova(PC1model2) # Treatment effect and NO block effect
-ranova(PC1model2) # No maternal line effect
-
-# PC 2
-PC2model2<-lmer(PC2~Block*Comp+Trt+(1|ML),DirtP)
-
-anova(PC2model2)
-ranova(PC2model2)
-BlockComp<-data.frame(emmeans(PC2model,~Comp:Block))
-
-ggplot(BlockComp,aes(Comp,emmean,fill=Comp))+
-  geom_bar(stat="identity")+
-  geom_errorbar(aes(ymin=emmean-SE,ymax=emmean+SE,width=0.2))+
-  theme_classic()+
-  facet_grid(~Block)+
-  theme(axis.text.x=element_text(angle=90,color="black",vjust=0.5))
-
-
-
-#PC 3
-PC3model<-lmer(PC3~Block*Comp+Trt+(1|ML),DirtP)
-# Comment: singular fit
-anova(PC3model) # Species and Block effects
-ranova(PC3model)
-
-#PC 4
-PC4model<-lmer(PC4~Block*Comp+Trt+(1|ML),DirtP)
-
-anova(PC4model)
-ranova(PC4model) # Significant maternal line effect for PC 4
-
 
 
 ##################################################  
@@ -383,13 +293,7 @@ pcaQ
 
 
 
-
-
-
-
-
-
-# Scree Polot --- Supplimentary Fig. 1
+# Scree Polot --- Supplimentary Fig. 2
 
 eigenvalues <- res.pca$eig
 barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
@@ -403,7 +307,7 @@ lines(x = 1:nrow(eigenvalues), eigenvalues[, 2],
   
   fviz_screeplot(res.pca, ncp=10,barcolor="gold",barfill="gold",line="white")
 
-## Plot the % Contribution of each trait on each PC, Fig. 3
+## Plot the % Contribution of each trait on each PC (Extra)
 
 RootCodes <- read.csv("C:/Users/Sara Colom/Desktop/RootCodes.csv", encoding="UTF-8")
 Contrib<-data.frame(res.pca$var$contrib)
@@ -416,6 +320,9 @@ RootCodes<-RootCodes[order(RootCodes$TraitCode.),]
 
 Contrib[which(Contrib$Trait%in%RootCodes$TraitCode.),"Trait"] <- paste(RootCodes[which(RootCodes$TraitCode.%in%Contrib$Trait),1])
 
+
+#######     Fig. 3 plotting % contribution per dimension
+
 # Use position=position_dodge()
 q<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.1),Dim.1)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
@@ -426,7 +333,7 @@ q<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.1),Dim.1)) +
 
 q<-q +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=11,color="black"),axis.text.y = element_text(size=15,color="black"),plot.title = element_text(hjust = 0.5,size=20))+
-  ggtitle("PC1 (Root topology 22.47%)")
+  ggtitle("PC1 (Root topology)")
 
 r<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.2), y=Dim.2)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
@@ -437,7 +344,7 @@ r<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.2), y=Dim.2)) +
 
 r<-r +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=11,color="black"),axis.text.y = element_text(size=15,color="black"),plot.title = element_text(hjust = 0.5,size=20))+
-  ggtitle("PC2 (Root architecture 20.04%)")
+  ggtitle("PC2 (Root architecture)")
 
 
 s<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.3), y=Dim.3)) +
@@ -449,7 +356,7 @@ s<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.3), y=Dim.3)) +
 
 s<-s +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=11,color="black"),axis.text.y = element_text(size=15,color="black"),plot.title = element_text(hjust = 0.5,size=20))+
-  ggtitle("PC3 (Root size 13.72%)")
+  ggtitle("PC3 (Root size)")
 
 t<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.4), y=Dim.4)) +
   geom_bar(stat="identity", position=position_dodge(),fill="darkgrey")+
@@ -460,8 +367,10 @@ t<-ggplot(data=Contrib, aes(reorder(Trait, -Dim.4), y=Dim.4)) +
 
 t<-t +Tx+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=11,color="black"),axis.text.y = element_text(size=15,color="black"),plot.title = element_text(hjust = 0.5,size=20))+
-  ggtitle("PC4 (Root morphology 10.94%)")
+  ggtitle("PC4 (Root morphology)")
 
+# Explorepercent contribution of ea trait to ea dimension --> report the % for the axis it contributes the most
+DT::datatable(Contrib)
 
 # Plot the correlation between traits and PC
 corrplot(res.pca$var$cos2[,1:4], is.corr=FALSE,tl.col="black")
@@ -484,37 +393,7 @@ plot<-plot_grid(q,r,s,t, align='vh', vjust=1, scale = 1,labels = "AUTO",label_si
 
 grid.arrange(arrangeGrob(plot, left = y.grob,bottom=x.grob))
 
- # Factor Map
-
-A<-fviz_pca_var(res.pca, col.var="contrib",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE # Avoid text overlapping
-             ,select.var = list(contrib = 15),
-            labelsize=6
-)+
-  xlab("Root Topology (PC1 22.5%)")+
-  ylab("Root architecture  (PC2 20.0%) ")+ 
-  theme(axis.title=element_text(size=30),axis.text=element_text(size=25,color="black"))+
-  ggtitle("")
-
-
-
-B<-fviz_pca_var(res.pca, col.var="contrib",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE # Avoid text overlapping
-             ,select.var = list(contrib = 9),
-             labelsize=6,axes=c(3,4)
-)+
-  xlab("Root size (PC3 13.7%)")+
-  ylab("Root morphology (PC4 10.9%) ")+
-  
-  theme(axis.title=element_text(size=30),axis.text=element_text(size=25,color="black"))+
-  ggtitle("")
-
-
-
-
-ggarrange(A,B,labels="AUTO",common.legend=TRUE,font.label = list(size=25),label.x = 0.2)
+ 
 
 ##################################################  
 #      Estimate Phenotypic Distance btw PC's
@@ -591,76 +470,6 @@ for(i in 1:nrow(Both)){
 }
 
 
-#######
-#     Creating componant of Figure panel--Fig. 4
-######
-
-PC2<-ggplot(TraitsAll)+
-  geom_histogram(aes(PCA2,fill=Species),alpha=.5)+
-  #geom_density(aes(PCA2,fill=Species),alpha=.5) + 
-  scale_fill_manual(values = c('#999999','#E69F00')) + 
-  theme(legend.position = "none")+
-  theme_classic()+
-  ylab("")+
-  xlab("PCA 2")+
-  Tx2
-
-PC1<-ggplot(TraitsAll)+
-  geom_histogram(aes(PCA1,fill=Species))+
-  #geom_density(aes(PCA2,fill=Species),alpha=.5) + 
-  scale_fill_manual(values = c('#999999','#E69F00')) + 
-  theme(legend.position = "none")+
-  theme_classic()+
-  Tx2+
-  xlab("PCA 1")+
-  ylab("Count")
-
-
-PC3<-ggplot(TraitsAll)+
-  geom_histogram(aes(PCA3,fill=Species),alpha=.5)+
-  #geom_density(aes(PCA2,fill=Species),alpha=.5) + 
-  scale_fill_manual(values = c('#999999','#E69F00')) + 
-  theme(legend.position = "none")+
-  theme_classic()+
-  ylab("")+
-  xlab("PCA 3")+
-  Tx2
-
-PC4<-ggplot(TraitsAll)+
-  geom_histogram(aes(PCA4,fill=Species),alpha=.5)+
-  #geom_density(aes(PCA2,fill=Species),alpha=.5) + 
-  scale_fill_manual(values = c('#999999','#E69F00')) + 
-  theme(legend.position = "none")+
-  theme_classic()+
-  ylab("")+
-  xlab("PCA 4")+
-  Tx2
-
-
-blankPlot <- ggplot()+geom_blank(aes(1,1))+
-  theme(plot.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        panel.border = element_blank(),
-        panel.background = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.x = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()
-  )
-
-
-ggarrange(PC2, blankPlot, pca, PC1, 
-          ncol=2, nrow=2, widths=c(2, 2), heights=c(2, 3),legend="none")
-
-ggarrange(PC4, blankPlot, pcaQ, PC3, 
-          ncol=2, nrow=2, widths=c(2, 2), heights=c(2, 3),legend="none")
-
-ggarrange(pca,pcaQ, pcal,PC1,PC2,PC4, 
-          ncol=3, nrow=2,legend="none",labels = "AUTO",label.x = 0.3,label.y = 1)
-
-
 
 ##################################################  
 #      Treatment effect on Fitness 
@@ -679,17 +488,6 @@ anova(SN1)
 emmeans(SN1, ~Trt) # Averaged over treatment 
 
 FitMeansTrt<-data.frame(emmeans(SN1, ~Trt))
-
-ggplot(data=FitMeansTrt,aes(Trt,emmean))+
-  geom_col(aes(fill=Trt),alpha=0.5)+
-  scale_fill_manual(values = c("#00B050","black"))+
-  geom_errorbar(aes(ymin=emmean-SE,ymax=emmean+SE),width=0.2)+
-  theme_classic()+
-  ylab("")+
-  xlab("")+
-  Tx2+
-  labs(fill="Treatment",label=c("Alone","Competition"))
-  
 
 
 ##################################################  
@@ -826,7 +624,7 @@ ggplot() +
 
 
 ########################################################
-# Perform linear regression of PCs onto relative fitness
+#           Estimate Family means of traits
 ########################################################
 
 # Subset for I purpurea species
@@ -897,6 +695,8 @@ ggplot(data=Fitmean,aes(Combos,SeedNumberResid,fill=Outlier))+
   xlab("\nCombination pairing")
 
 
+# Count the number of Bio rep per maternal line by maternaline species combinations (i.e. Combos)
+
 SampleNumber<-
   Both%>%
  count(Combos)
@@ -957,25 +757,15 @@ ggtitle(" ")+
   theme(legend.position = "none")
 
 
-
-# Plot CI based on average points
-ggplot()+
-  geom_point(data=BothFit,aes(PhenDist_PCA2,SeedResiduals,color=Outlier),size=5,alpha=0.2)+
-  geom_point(data=AveragePhenoDist,aes(PhenDist_PCA2,SeedResiduals,color=Outlier),size=5,alpha=0.7)+
-  geom_smooth(data=AveragePhenoDist,aes(PhenDist_PCA2,SeedResiduals,color=Outlier),color="red",method="lm",size=1.2,se=F,linetype="dashed",fullrange=TRUE)+
-  geom_abline(slope=-0.1266,intercept = -0.0228,linetype="dashed",color="orange",size=1.5)+
-  geom_abline(slope=-0.0183,intercept = 0.2444,linetype="dashed",color="orange",size=1.5)+
-  #geom_smooth(data=AveragePhenoDist, aes(PhenDist_PCA2,SeedResiduals),method = lm, formula = y ~ log(x) , se =TRUE,fullrange=TRUE,color="blue")+
-  theme_classic()+
-  theme(legend.position = "none")+
-  scale_color_manual(values = c("black","blue","gold"))+
-  ylab("Relative Fitness")+
-  xlab("Phenotypic Distance (PC2)")+
-  theme(axis.text.x=element_text(angle=0,size=12,vjust=0.5,color="black"),axis.text.y=element_text(size=12,color="black"),legend.position = "none",axis.title = element_text(size=20))
+RegressError1
 
 
 
+########################################################
+# Perform linear regression of PCs onto relative fitness
+########################################################
 
+# Selection Analysis
 # Subset by treatment
 
 PCAalone<-droplevels(pcFamilyMeans%>%filter(Trt=="Alone"))
@@ -983,15 +773,24 @@ PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 
 
 PC1.res.alone<-summary(lm(SeedNumberResid~PCA1,PCAalone))
+PC1.res.alone
 PC2.res.alone<-summary(lm(SeedNumberResid~PCA2,PCAalone))
+PC2.res.alone
 PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone))
+PC3.res.alone # Root size--No evidence of selection. Not in the table.
 PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone))
+PC4.res.alone
 
 PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp)) 
+PC1.res.comp
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
+PC2.res.comp
 PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))
+PC3.res.comp # Root size--No evidence of selection. Not in the table.
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp%>%filter(PCA4>-1))) # Remove outlier w
+PC4.res.comp # NOT reported
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp)) # w/o Remove outlier 
+PC4.res.comp # Reported
 
 ## ANCOVA for PCA4 (Root morphology)
 
@@ -1024,10 +823,13 @@ summary(lm(SeedNumberResid~PCA4_2+PCA4,PCAalone))
 
  # No evidence of quadratic selection
 
-# Plot selection on PC4 (root morphology)
+
+########################################################
+      # Plot selection on PC4 (root morphology)
+########################################################
+
 
 TraitsAllFit<-merge(TraitsAll,RelFitMean)
-
 TraitsAllFit<-merge(TraitsAll,RelFitMean2)
 
 
@@ -1037,14 +839,17 @@ pcFamilyMeans<-merge(pcFamilyMeans,pcFamilySE)
 FitStandError2<-aggregate(list(Fitmean[c( "SeedNumberResid")]),by=list(Fitmean$Trt,Fitmean$ML),FUN=std.error) #Estimate Standard Error
 
 colnames(FitStandError2)<-c("Trt","ML","Fit_SE")
+pcFamilyMeans<-merge(FitStandError2,pcFamilyMeans)
 
+
+#### Fig. 4 A and B
 
 RegressAlone<-ggplot(pcFamilyMeans%>%filter(Trt=="Alone"))+
   geom_point(aes(PCA4, SeedNumberResid),size=5,alpha=0.5)+
-  geom_errorbar(aes(x=PCA4,ymin=SeedNumberResid-Fit_SE,ymax=SeedNumberResid+Fit_SE))+
-  geom_errorbarh(aes(y=SeedNumberResid,xmin=PCA4-PCA4_SE,xmax=PCA4+PCA4_SE))+
+  #geom_errorbar(aes(x=PCA4,ymin=SeedNumberResid-Fit_SE,ymax=SeedNumberResid+Fit_SE))+ # Uncomment to add error bars
+  #geom_errorbarh(aes(y=SeedNumberResid,xmin=PCA4-PCA4_SE,xmax=PCA4+PCA4_SE))+ # Uncomment to add error bars
   scale_color_manual(values=c("red","black"))+
-  stat_smooth(aes(PCA4, SeedNumberResid),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T,linetype="dashed",color="red")+
+  stat_smooth(aes(PCA4, SeedNumberResid),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T,color="black")+
   #scale_linetype_manual(values=c("twodash", "solid"))+
   theme_classic()+
   ylab("Relative fitness")+
@@ -1061,20 +866,14 @@ RegressAlone<-ggplot(pcFamilyMeans%>%filter(Trt=="Alone"))+
   theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
         legend.direction = "horizontal")
 
+RegressAlone
 
-
-pcFamilyMeans<-merge(FitStandError2,pcFamilyMeans)
 
 RegressComp<-ggplot(data=pcFamilyMeans%>%filter(Trt!="Alone"))+
   geom_point(aes(PCA4, SeedNumberResid),size=5,alpha=0.5)+
-  geom_errorbar(aes(x=PCA4,ymin=SeedNumberResid-Fit_SE,ymax=SeedNumberResid+Fit_SE))+
-  geom_errorbarh(aes(y=SeedNumberResid,xmin=PCA4-PCA4_SE,xmax=PCA4+PCA4_SE))+
-  
-  #geom_point(data=IpPA4b%>%filter(Trt!="Alone"),aes(PCA4,SeedNumberResid,color=ML),alpha=0.2)+
-  #eom_abline(intercept = -0.0146,slope=-0.0164,linetype="dashed",color="orange")+
-  #geom_abline(intercept = 0.017,slope=-0.0023)+
-  #scale_color_brewer(palette = "Paired")+
-  stat_smooth(data=pcFamilyMeans%>%filter(Trt!="Alone"),aes(PCA4, SeedNumberResid),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T,linetype="dashed",color="red")+
+  #geom_errorbar(aes(x=PCA4,ymin=SeedNumberResid-Fit_SE,ymax=SeedNumberResid+Fit_SE))+ # Uncomment to add error bars
+  #geom_errorbarh(aes(y=SeedNumberResid,xmin=PCA4-PCA4_SE,xmax=PCA4+PCA4_SE))+ # Uncomment to add error bars
+  stat_smooth(data=pcFamilyMeans%>%filter(Trt!="Alone"),aes(PCA4, SeedNumberResid),alpha=0.5,method="lm", formula=y~x,se=F,fullrange = T,color="black")+
   #scale_linetype_manual(values=c("twodash", "solid"))+
   theme_classic()+
   ylab("Relative fitness")+
@@ -1092,30 +891,14 @@ RegressComp<-ggplot(data=pcFamilyMeans%>%filter(Trt!="Alone"))+
         legend.direction = "horizontal")
 
 
-
-
-ggplot(IpPA4,aes(ML,PCA4,color=ML))+
-  scale_color_brewer(palette = "Paired")+
-  geom_boxplot()+
-  theme_classic()+
-  theme(legend.text=element_text(size=12),legend.title=element_text(size=12),legend.position = 'top',
-        legend.direction = "horizontal")
-  
-
-# Extra
-
-
-## Selection analysis on a few main traits
-
-#(1) Subset for traits of interest
-#(2) Obtain family mean of traits (average ea trait by ml, treatment and species)
-#(3) Average trait by class (e.g. average D% traits, architecture traits etc)
+RegressComp
 
 
 
-#####################################
-# Post-Hoc Linear mixed model on single traits
-#####################################
+
+#####################################################
+  # Post-Hoc Linear mixed model on single traits
+#####################################################
 
 
 # Run for loop to save results of LMM on the traits that were significant from PC back regression
@@ -1177,8 +960,9 @@ DT::datatable(ModelRand)
 df$Comp=sub(".*\\-","",df$Combos)
 
 
-# Post Hoc character displacement test
-
+#####################################################
+    # Post Hoc character displacement test
+#####################################################
 
 # Index traits of interest
 
@@ -1207,7 +991,7 @@ f<-function(x)
 
 Both2$PhenDist_SKL=apply(Both2[,grep("SKL_NODES",names(Both2))],1,f) # SKL NODES
 
-Both2$PhenDist_Dstm=apply(Both2[,grep("DIA_STM",names(Both2))],1,f) #DIA STM
+Both2$PhenDist_Dstm=apply(Both2[,grep("DIA_STM",names(Both2))],1,f) # DIA STM
 
 Both2$PhenDist_AvDen=apply(Both2[,grep("AVG_DENSITY",names(Both2))],1,f)
 
@@ -1237,16 +1021,15 @@ Both2$PhenDist_90dia=apply(Both2[,grep("MAX_DIA_90",names(Both2))],1,f)
 
 
 
-#DistanceMeans<-aggregate(list(Both2[grep("PhenDist",names(Both2))]),by=list(Both2$Trt,Both2$ML,Both2$Combos),FUN=mean) # Mean phenotypic distance
+DistanceMeans<-aggregate(list(Both2[grep("PhenDist",names(Both2))]),by=list(Both2$Trt,Both2$ML,Both2$Combos),FUN=mean) # Mean phenotypic distance
 
-#colnames(DistanceMeans)[1:3]=c("Trt","ML","Combos") # Rename coloumns
+colnames(DistanceMeans)[1:3]=c("Trt","ML","Combos") # Rename coloumns
 
 
 
 # Merge to fitness averaged at level of combo
 
 PhenDistFit=merge(RelFitMean,DistanceMeans)
-
 PhenDistFit<-droplevels(PhenDistFit%>%filter(Trt=="Inter"))
 
 
@@ -1277,93 +1060,13 @@ summary(lm(SeedResiduals~PhenDist_Hypdia,PhenDistFit))#
 summary(lm(SeedResiduals~PhenDist_90dia,PhenDistFit))# 
 
 
-
-#summary(lm(SeedResiduals~PhenDist_BASALcount,PhenDistFit%>%filter(PhenDist_BASALcount<4)))# Significant
-
 summary(lm(SeedResiduals~PhenDist_TAPdia,PhenDistFit))
 
 
 
-# Calculate quadratic term
-
-PhenDistFit$PhenDist_ADVTcount2=PhenDistFit$PhenDist_ADVTcount*PhenDistFit$PhenDist_ADVTcount
-
-PhenDistFit$PhenDist_Hypdia2=PhenDistFit$PhenDist_Hypdia*PhenDistFit$PhenDist_Hypdia
-
-PhenDistFit$PhenDist_AvDen2=PhenDistFit$PhenDist_AvDen*PhenDistFit$PhenDist_AvDen
-
-PhenDistFit$PhenDist_TDav2=PhenDistFit$PhenDist_TDav*PhenDistFit$PhenDist_TDav
-
-PhenDistFit$PhenDist_RTPcount2=PhenDistFit$PhenDist_RTPcount*PhenDistFit$PhenDist_RTPcount
-
-PhenDistFit$PhenDist_STA2=PhenDistFit$PhenDist_STA*PhenDistFit$PhenDist_STA
-
-PhenDistFit$PhenDist_STAmax2=PhenDistFit$PhenDist_STAmax*PhenDistFit$PhenDist_STAmax
-
-PhenDistFit$PhenDist_RTA2=PhenDistFit$PhenDist_RTA*PhenDistFit$PhenDist_RTA
-
-PhenDistFit$PhenDist_90dia2=PhenDistFit$PhenDist_90dia*PhenDistFit$PhenDist_90dia
-
-PhenDistFit$PhenDist_TAPdia2=PhenDistFit$PhenDist_TAPdia*PhenDistFit$PhenDist_TAPdia
-
-PhenDistFit$PhenDist_SKL2=PhenDistFit$PhenDist_SKL*PhenDistFit$PhenDist_SKL
-
-
-
-# Quadratic selection
-summary(lm(SeedResiduals~PhenDist_SKL2+PhenDist_SKL,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_Hypdia+PhenDist_Hypdia2,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_AvDen2+PhenDist_AvDen,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_TDav2+PhenDist_TDav,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_RTPcount2+PhenDist_RTPcount,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_STA2+PhenDist_STA,PhenDistFit)) 
-
-summary(lm(SeedResiduals~PhenDist_RTA2+PhenDist_RTA,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_ADVTcount2+PhenDist_ADVTcount,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_STAmax2+PhenDist_STAmax,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_TAPdia2+PhenDist_TAPdia,PhenDistFit))
-summary(lm(SeedResiduals~PhenDist_90dia2+PhenDist_90dia,PhenDistFit))
-
-
-
-pcFamilyMeansCombo<-aggregate(list(IpPA4[c("PCA1","PCA2","PCA3","PCA4")]),by=list(IpPA4$Trt,IpPA4$ML,IpPA4$Combos),FUN=mean) #
-colnames(pcFamilyMeansCombo)[1:3]<-c("Trt","ML","Combos")
-
-pcFamilyMeansCombo<-merge(RelFitMean,pcFamilyMeansCombo)
-
-AloneMeansComb<-pcFamilyMeansCombo%>%filter(Trt=="Alone")
-CompMeansComb<-pcFamilyMeansCombo%>%filter(Trt!="Alone")
-
-colnames(AloneMeansComb)[4:8]<-paste(colnames(AloneMeansComb)[4:8],"Alone",sep="_")
-colnames(CompMeansComb)[4:8]<-paste(colnames(CompMeansComb)[4:8],"Comp",sep="_")
-
-pcFamilyMeansCombWide<-merge(AloneMeansComb,CompMeansComb,by=c("ML"))
-
-ggplot(data=pcFamilyMeansCombWide)+
-  geom_point(aes(PCA2_Alone,PCA2_Comp,size=SeedResiduals_Comp),alpha=0.5)+
-  geom_line(aes(x=PCA2_Alone,y=PCA2_Alone),size=1.2)+
-  theme_bw()+
-  labs(size="Relative fitness")+
-  Tx2
-
-Fitmean$Comp<-as.character(Fitmean$Comp)
-Fitmean[which(Fitmean$Trt=="Alone"),"Comp"]<-"none"
-Fitmean$Comp<-as.factor(Fitmean$Comp)
-
-RelModel<-lm(Rel_Fit~Trt*Block+Block*Comp,Fitmean) # Marginally significant when we do not take size into account
-anova(RelModel) # Block by treatment differences
-
-
-
-
-ggplot(Combos,aes(Combos,emmean))+
-  geom_bar(stat="identity")+
-  geom_errorbar(aes(ymin=emmean-SE,ymax=emmean+SE,width=0.2))+
-  theme_classic()+
-  #facet_grid(~Block)+
-  ggtitle("I. purpurea")+
-  theme(axis.text.x=element_text(angle=90,color="black",vjust=0.5),plot.title=element_text(vjust=1))
-
+##################################################################################
+      # Post=Hoc Analysis for Combination effect on root architecture
+##################################################################################
 
 # PC 2--at the level of a combination BLOCK removed
 
@@ -1384,7 +1087,7 @@ anova(PC4model2) # Significant treatment effect and combination effect
 
 
 #########################################
-# Additional (I.hed plot)
+    # Fig. S5 Additional (I.hed plot)
 #########################################
 
 
