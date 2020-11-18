@@ -78,16 +78,16 @@ FocusTraits=c("trans.SKL_NODES", "trans.DIA_STM", "trans.DIA_STM_SIMPLE",
 
 
 # Read in data
-setwd("C:/Users/Sara Colom/Desktop/character-displacement/CharacterDisplacement")
+setwd("../CharacterDisplacement/CleanData/")
 
   # Fitness data
-  Fit<-read.csv("CleanData/FitPA4.csv")
+  Fit<-read.csv("FitPA4.csv")
   
   # Root trait data
-  tot2<-read.csv("CleanData/totPA4.csv")
+  tot2<-read.csv("totPA4.csv")
   
   # Size
-  size<-read.csv("CleanData/SizeData.csv")
+  size<-read.csv("SizeData.csv")
   
   
 # Sample sizes
@@ -307,7 +307,7 @@ lines(x = 1:nrow(eigenvalues), eigenvalues[, 2],
 
 ## Plot the % Contribution of each trait on each PC (Extra)
 
-RootCodes <- read.csv("C:/Users/Sara Colom/Desktop/RootCodes.csv", encoding="UTF-8")
+RootCodes <- read.csv("RootCodes.csv", encoding="UTF-8")
 Contrib<-data.frame(res.pca$var$contrib)
 RowNames<-row.names(Contrib)
 Contrib$Trait<-gsub("trans.","",RowNames)
@@ -773,21 +773,25 @@ PCAcomp<-droplevels(pcFamilyMeans%>%filter(Trt!="Alone"))
 
 PC1.res.alone<-summary(lm(SeedNumberResid~PCA1,PCAalone))
 PC1.res.alone
+
 PC2.res.alone<-summary(lm(SeedNumberResid~PCA2,PCAalone))
 PC2.res.alone
+
 PC3.res.alone<-summary(lm(SeedNumberResid~PCA3,PCAalone))
-PC3.res.alone # Root size--No evidence of selection. Not in the table.
+PC3.res.alone # Root size--No evidence of selection. Not reported.
+
 PC4.res.alone<-summary(lm(SeedNumberResid~PCA4,PCAalone))
 PC4.res.alone
 
 PC1.res.comp<-summary(lm(SeedNumberResid~PCA1,PCAcomp)) 
 PC1.res.comp
+
 PC2.res.comp<-summary(lm(SeedNumberResid~PCA2,PCAcomp))
 PC2.res.comp
+
 PC3.res.comp<-summary(lm(SeedNumberResid~PCA3,PCAcomp))
-PC3.res.comp # Root size--No evidence of selection. Not in the table.
-PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp%>%filter(PCA4>-1))) # Remove outlier w
-PC4.res.comp # NOT reported
+PC3.res.comp # Root size--No evidence of selection. Not reported.
+
 PC4.res.comp<-summary(lm(SeedNumberResid~PCA4,PCAcomp)) # w/o Remove outlier 
 PC4.res.comp # Reported
 

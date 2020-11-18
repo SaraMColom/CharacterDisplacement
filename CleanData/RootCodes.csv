@@ -1,0 +1,35 @@
+﻿Traitname,TraitCode 
+Skeleton nodes,SKL_NODES
+Skeleton width  ,SKL_WIDTH
+Skeleton depth,SKL_DEPTH
+Stem diameter ,DIA_STM
+Simple stem diameter ,DIA_STM_SIMPLE
+Projected root area ,AREA
+Average root density ,AVG_DENSITY
+Mean tip diameter ,TD_AVG
+Root tip count ,RTP_COUNT
+Soil tissue angle range ,STA_RANGE
+Max soil tissue angle ,STA_MAX
+Max width of the root system ,WIDTH_MAX
+Max root tissue angle ,RTA_MAX
+Root top angle range ,RTA_RANGE
+Spatial root distribution X ,RDISTR_X
+Spatial root distribution Y ,RDISTR_Y
+Number of Adventitious roots,ADVT_COUNT
+Adventitious root angle,ADVT_ANG
+Number of basal roots ,BASAL_COUNT
+Basal root angle ,BASAL_ANG
+Hypocotyl diameter ,HYP_DIA
+Tap root diameter ,TAP_DIA
+Max diameter at 90-100% depth ,MAX_DIA_90
+50 percent drop ,DROP_50
+Accumulated width 10%,D10
+Accumulated width 20%,D20
+Accumulated width 30%,D30
+Accumulated width 40%,D40
+Accumulated width 50%,D50
+Accumulated width 60%,D60
+Accumulated width 70%,D70
+Accumulated width 80%,D80
+Accumulated width 90%,D90
+Accumulated width 100%,D100

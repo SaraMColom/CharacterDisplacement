@@ -10,15 +10,15 @@ library(ggpubr)
 ########################################################
 ### Set up
 ########################################################
-setwd("C:/Users/Sara Colom/Desktop/character-displacement/CharacterDisplacement")
+setwd("../CleanData/")
 
 
 # Read in data
-Fit<-read.csv("CleanData/FitPA4.csv")
+Fit<-read.csv("FitPA4.csv")
 # Root trait data
-tot2<-read.csv("CleanData/totPA4.csv")
+tot2<-read.csv("totPA4.csv")
 # Size
-size<-read.csv("CleanData/SizeData.csv",na.strings = c("."," "))
+size<-read.csv("SizeData.csv",na.strings = c("."," "))
 
 
 # Correct data structure
@@ -392,16 +392,4 @@ Save$Traits=row.names(Save)
 Save$Traits<-gsub("1","",Save$Traits)
 DT::datatable(Save[c(1,2,4,7,8)])
 
-#       EXAMPLE TEST:
-#   Run Code below and compare to Chong et al. 2018
-####################
-# Test with Anholt paper and results from Chong et al 2018
-#TestLoad<-read.csv("~/Downloads/Loading_Anholt_1991.csv")
-#TestCoef<-read.csv("~/Downloads/RegressionPC_Anholt_1991.csv")
-#head(TestLoad)
-#head(TestCoef)
 
-#Betas<-as.matrix(TestLoad) %*% as.matrix(TestCoef[2])
-#TestLoadSq<-as.matrix(TestLoad)*as.matrix(TestLoad)
-#SEsquared<-TestCoef$se*TestCoef$se
-#sqrt((TestLoadSq%*%SEsquared)) # Standard Error for projected betas
