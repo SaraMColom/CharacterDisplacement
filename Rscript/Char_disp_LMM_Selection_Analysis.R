@@ -46,9 +46,7 @@ library(tm)
 library(tidyverse)
 library(httr)
 library(janitor)
-library(missMDA)
 library(ggpubr)
-library(randomForest)
 library(rdist)
 
 #Save theme text setting
@@ -485,6 +483,8 @@ Fit2$Block=as.factor(Fit2$Block) # fix str
 SN1<-lmer(SeedNumber~Trt+Block+Leaf.Number+Block:Trt+(1|ML),Fit2)
 anova(SN1)
 
+summary(SN1)
+
 emmeans(SN1, ~Trt) # Averaged over treatment 
 
 FitMeansTrt<-data.frame(emmeans(SN1, ~Trt))
@@ -495,7 +495,7 @@ FitMeansTrt<-data.frame(emmeans(SN1, ~Trt))
 ##################################################   
 
 
-SdMnSpeciesTrt<- aggregate(SeedNumber ~ Species+Trt, Fit2, mean) # Mean residual. NOTE I am using the version with block effects removed, only
+SdMnSpeciesTrt<- aggregate(SeedNumber ~ Species + Trt, Fit2, mean) # Mean residual. NOTE I am using the version with block effects removed, only
 names(SdMnSpeciesTrt)[3]<- "MeanSdNm" #Rename coloumn for mean seed number
 # Merge average fitness of species and treatment 
 Fitmean<-merge(Fit2,SdMnSpeciesTrt,by=c("Species","Trt"))
@@ -655,7 +655,6 @@ pcFamilyMeans<-merge(pcFamilyMeans,RelFitMean2)
 PCAall=pcFamilyMeans
 
 
-# Write combined data to clean data folder
 
 ###################### ###################### ###################### ###################### ############
 ###############       Plotting phenotypic distance with variation/Standard Error            ############
@@ -1120,6 +1119,18 @@ ggplot(data=HedData%>%filter(MeanSize<20),aes(MeanPhenDistPC2,MeanSize))+
   theme(axis.text.x=element_text(angle=90,size=12,vjust=0.5,color="black"),axis.text.y=element_text(size=12,color="black"),legend.position = "none",axis.title = element_text(size=20))+
   ylab("Plant Size\n")+
   xlab("\nPhenotypic Distance Root Architecture (PC2)")
+
+
+
+#########################################
+# Plot phenotypic distance measure of root architecture vs raw value of trait
+#########################################
+
+plot(Both$PCA2,Both$PhenDist_PCA2)
+abline(Both$PCA2,Both$PhenDist_PCA2)
+
+summary(lm(PhenDist_PCA2 ~ PCA2, Both))
+
 
 
 
